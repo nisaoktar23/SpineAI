@@ -1,0 +1,19 @@
+[Unit]
+Description=Posture Detection Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/posture-detection/backend
+Environment="NODE_ENV=production"
+Environment="PORT=8080"
+ExecStart=/usr/bin/node /opt/posture-detection/backend/src/server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=posture-detection
+
+[Install]
+WantedBy=multi-user.target

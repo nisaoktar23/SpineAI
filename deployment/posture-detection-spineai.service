@@ -1,0 +1,19 @@
+[Unit]
+Description=SpineAI Posture Detection Backend Service
+After=network.target mongodb.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/snap/SpineAI/SpineAI web/backend
+Environment="NODE_ENV=production"
+Environment="PORT=8080"
+ExecStart=/usr/bin/node "/snap/SpineAI/SpineAI web/backend/src/server.js"
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=spineai
+
+[Install]
+WantedBy=multi-user.target

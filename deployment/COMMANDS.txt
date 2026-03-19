@@ -1,0 +1,131 @@
+# ===========================================
+# KOMUT LISTESI - SUNUCUDA SIRASIYLA CALISTIRIN
+# ===========================================
+
+# --- ADIM 1: SUNUCUYA BAGLANIN ---
+# Windows PowerShell'de:
+ssh root@124.243.177.173
+# Sifre: Kenan_avc_4455
+
+
+# --- ADIM 2: PROJE DIZININI OLUSTURUN ---
+mkdir -p /opt/posture-detection
+cd /opt/posture-detection
+
+
+# --- ADIM 3: NODE.JS KURUN ---
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt-get install -y nodejs
+node --version
+npm --version
+
+
+# --- ADIM 4: PYTHON KURUN ---
+apt-get update
+apt-get install -y python3 python3-pip net-tools
+python3 --version
+pip3 --version
+
+
+# --- ADIM 5: PROJE DOSYALARINI YUKLEYIN ---
+# Yeni bir Windows PowerShell penceresi acin ve su komutu calistirin:
+# scp -r "c:\Users\nisa\Desktop\postur_tespit - Kopya - Kopya\backend" root@124.243.177.173:/opt/posture-detection/
+# Sifre: Kenan_avc_4455
+
+
+# --- ADIM 6: BACKEND BAGIMLILIKLAR ---
+cd /opt/posture-detection/backend
+npm install --production
+pip3 install -r requirements.txt
+
+
+# --- ADIM 7: .ENV DOSYASI ---
+cat > /opt/posture-detection/backend/.env << 'EOF'
+NODE_ENV=production
+PORT=8080
+JWT_SECRET=super-secret-key-change-this-2026
+MONGODB_URI=mongodb://localhost:27017/posture_detection
+EOF
+
+
+# --- ADIM 8: SYSTEMD SERVIS DOSYASI ---
+cat > /etc/systemd/system/posture-detection.service << 'EOF'
+[Unit]
+Description=Posture Detection Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/posture-detection/backend
+Environment="NODE_ENV=production"
+Environment="PORT=8080"
+ExecStart=/usr/bin/node /opt/posture-detection/backend/src/server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=posture-detection
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+
+# --- ADIM 9: SERVISI AKTIVE EDIN ---
+systemctl daemon-reload
+systemctl enable posture-detection.service
+systemctl start posture-detection.service
+
+
+# --- ADIM 10: DURUMU KONTROL EDIN ---
+systemctl status posture-detection.service
+
+
+# --- ADIM 11: PORT KONTROLU ---
+netstat -tuln | grep :8080
+
+
+# --- ADIM 12: TEST ---
+curl http://localhost:8080
+
+
+# ===========================================
+# YONETIM KOMUTLARI
+# ===========================================
+
+# Servis durumu
+systemctl status posture-detection
+
+# Servisi yeniden baslat
+systemctl restart posture-detection
+
+# Servisi durdur
+systemctl stop posture-detection
+
+# Canli loglar
+journalctl -u posture-detection -f
+
+# Son 100 log satiri
+journalctl -u posture-detection -n 100
+
+# Hata loglari
+journalctl -u posture-detection -p err
+
+
+# ===========================================
+# SORUN GIDERME
+# ===========================================
+
+# Manuel calistirma (debug)
+cd /opt/posture-detection/backend
+node src/server.js
+
+# 8080 portunu kullanan process
+lsof -i :8080
+
+# Process'i sonlandirma
+kill -9 <PID>
+
+# Tum node process'lerini gorme
+ps aux | grep node
